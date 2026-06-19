@@ -62,28 +62,6 @@ const products = [
     rating: 4.6,
     benefits: ['Relajación', 'Digestión'],
   },
-  // {
-  //   id: 5,
-  //   name: 'Miel de Abeja Orgánica',
-  //   description: 'Miel natural sin conservantes',
-  //   price: 20.0,
-  //   image: 'https://http2.mlstatic.com/D_NQ_NP_869408-MLA110799844582_052026-O-miel-de-abeja-organica-500-gr-frasco-calypso.webp',
-  //   category: 'miel',
-  //   stock: 25,
-  //   rating: 4.8,
-  //   benefits: ['Energía', 'Antioxidantes'],
-  // },
-  // {
-  //   id: 6,
-  //   name: 'Quinua Premium',
-  //   description: 'Superfood rica en proteínas',
-  //   price: 16.0,
-  //   image: 'https://tienda.e-incasur.com/wp-content/uploads/2023/05/quinua-perlada-gourmet-incasur-1.webp',
-  //   category: 'superfoods',
-  //   stock: 18,
-  //   rating: 4.7,
-  //   benefits: ['Proteínas', 'Fibra'],
-  // },
 ];
 
 const categories = [

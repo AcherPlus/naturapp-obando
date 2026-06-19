@@ -73,6 +73,9 @@ return (
 ```
 
 ### 1.2. Carpeta "tabs"
+
+Desde esta carpeta (en el archivo home.js) inicia el ruteo hacia las demás pantallas.
+
 - **orders.js**: Al registrar un pedido, aparece como "Pendiente" en la pantalla de "Órdenes". Caso contrario, muestra el mensaje "No hay pedidos".
 
 ```
@@ -153,4 +156,359 @@ return (
           </TouchableOpacity>
     </View>
 );
+```
+
+## 2. Carpeta "src"
+
+Se encuentra el backend de la aplicación, donde se hace la conexión con la base de datos local mediante API Getaway. Utilizando NodeJS se lavanta un servidor con los datos de los productos.
+
+En **server.js** se prepara los productos para la conexión a la base de datos. De esta forma, apretando npm run server, el servidor pueda accederse a todos mediante la IP.
+
+```
+const express = require('express');
+
+const app = express();
+const PORT = process.env.PORT || 9090;
+
+app.use(express.json());
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
+    return res.sendStatus(204);
+  }
+  next();
+});
+
+const products = [
+  {
+    id: 1,
+    name: 'Maca Andina',
+    description: 'Superfood energético rico en nutrientes',
+    price: 25.0,
+    image: 'https://proexpansion.com/uploads/article/image/1841/larger_maca.jpg',
+    category: 'superfoods',
+    stock: 20,
+    rating: 4.8,
+    benefits: ['Energía', 'Resistencia', 'Vitaminas'],
+  },
+  {
+    id: 2,
+    name: 'Aceite de Coco Extra Virgen',
+    description: 'Ideal para cocinar y cuidado personal',
+    price: 18.5,
+    image: 'https://borganics.cl/cdn/shop/products/aceite-coco-virgen-500-scaled.jpg',
+    category: 'aceites',
+    stock: 15,
+    rating: 4.7,
+    benefits: ['Piel saludable', 'Antioxidantes'],
+  },
+  {
+    id: 3,
+    name: 'Cápsulas de Omega 3',
+    description: 'Suplemento para la salud cardiovascular',
+    price: 32.0,
+    image: 'https://masonnatural.pe/wp-content/uploads/2020/04/Fish-Oil-Front-2.png',
+    category: 'capsulas',
+    stock: 10,
+    rating: 4.9,
+    benefits: ['Corazón', 'Cerebro'],
+  },
+  {
+    id: 4,
+    name: 'Infusión de Manzanilla',
+    description: 'Bebida relajante y digestiva',
+    price: 12.0,
+    image: 'https://plazavea.vteximg.com.br/arquivos/ids/17782556-418-418/133196.jpg',
+    category: 'infusiones',
+    stock: 30,
+    rating: 4.6,
+    benefits: ['Relajación', 'Digestión'],
+  },
+];
+
+const categories = [
+  { id: 'superfoods', name: 'Superfoods' },
+  { id: 'aceites', name: 'Aceites' },
+  { id: 'capsulas', name: 'Cápsulas' },
+  { id: 'infusiones', name: 'Infusiones' },
+  { id: 'miel', name: 'Miel' },
+];
+const orders = [];
+const users = [
+  { id: 1, name: 'Usuario de Prueba', email: 'test@example.com', password: 'password123' },
+];
+
+app.get('/api/products', (req, res) => {
+  const category = req.query.category;
+
+  const result =
+    category && category !== 'todos'
+      ? products.filter(product => product.category === category)
+      : products;
+
+  res.json(result);
+});
+
+app.get('/api/products/search', (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  const result = products.filter(
+    (product) =>
+      product.name.toLowerCase().includes(q) ||
+      product.description.toLowerCase().includes(q)
+  );
+  res.json(result);
+});
+
+app.get('/api/products/:id', (req, res) => {
+  const product = products.find((item) => item.id === Number(req.params.id));
+  if (!product) {
+    return res.status(404).json({ message: 'Producto no encontrado' });
+  }
+  res.json(product);
+});
+
+app.get('/api/categories', (req, res) => {
+  res.json(categories);
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = users.find(
+    (item) => item.email === email && item.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ message: 'Credenciales inválidas' });
+  }
+
+  res.json({
+    token: 'fake-jwt-token',
+    user: { name: user.name, email: user.email },
+  });
+});
+
+app.post('/api/orders', (req, res) => {
+  const orderData = req.body;
+  const order = {
+    id: orders.length + 1,
+    ...orderData,
+    createdAt: new Date().toISOString(),
+  };
+  orders.push(order);
+  res.status(201).json(order);
+});
+
+app.get('/api/orders', (req, res) => {
+  res.json(orders);
+});
+
+app.get('/api/orders/:id', (req, res) => {
+  const order = orders.find((item) => item.id === Number(req.params.id));
+  if (!order) {
+    return res.status(404).json({ message: 'Pedido no encontrado' });
+  }
+  res.json(order);
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
+});
+```
+
+### 2.1. Carpeta "components"
+
+- **CartItemRow.js**: Componente de cada producto que es añadido al carrito de compras. Incluye los precios de los productos y puede aumentar o reducir la cantidad de dicho producto. Además tiene la opción de eliminarse el producto y reemplazarlo por otro.
+
+```
+return (
+  <View style={containerStyle}>
+    <Text style={titleStyle}>
+      Mi Carrito ({safeItems.length} items)
+    </Text>
+
+    {error ? (
+      <Text style={errorStyle}>{error}</Text>
+    ) : (
+      <FlatList
+        data={safeItems}
+        keyExtractor={item =>
+          item.productId.toString()}
+        renderItem={({ item }) => (
+          <CartItemRow
+            item={item}
+            onIncrease={() =>
+              updateQuantity(
+                item.productId,
+                item.quantity + 1)}
+            onDecrease={() =>
+              updateQuantity(
+                item.productId,
+                item.quantity - 1)}
+            onRemove={() =>
+              removeItem(item.productId)}
+          />
+        )}
+        ListEmptyComponent={
+          <Text style={emptyStyle}>
+            Tu carrito está vacío
+          </Text>}
+      />
+    )}
+
+    {safeItems.length > 0 && (
+      <View style={styles.footer}>
+        <TextInput
+          style={inputStyle}
+          placeholder='Dirección de entrega'
+          placeholderTextColor={theme.placeholder}
+          value={address}
+          onChangeText={setAddress}
+        />
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>
+            Total:</Text>
+          <Text style={styles.totalValue}>
+            S/ {safeTotal.toFixed(2)}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.checkoutBtn}
+          onPress={handleCheckout}>
+          <Text style={styles.checkoutText}>
+            Realizar Pedido</Text>
+        </TouchableOpacity>
+      </View>
+    )}
+  </View>
+);
+```
+
+- **CategoryChip.js**: Componente con el que se selecciona productos en base a su categoría (Todos, Superfood, Aceites, Cápsulas, Infusiones, Miel). Van después de la barra de búsqueda.
+
+```
+export default function CategoryChip({ label, active, onPress }) {
+  const { theme } = useTheme();
+	return (
+		<TouchableOpacity
+			style={[
+				styles.chip,
+				{ backgroundColor: theme.card, borderColor: theme.border },
+				active && { backgroundColor: theme.accent, borderColor: theme.accent },
+			]}
+			onPress={onPress}
+		>
+			<Text style={[
+				styles.text,
+				{ color: active ? '#FFFFFF' : theme.text },
+			]}>
+				{label}
+			</Text>
+		</TouchableOpacity>
+	);
+}
+```
+
+### 2.2. Carpeta "models"
+
+- **Orders.js**: Estructura de un pedido realizado por el usuario. Contiene datos como la lista de productos, el precio total, el estado (pendiente, procesando, etc.) y la fecha de creación del pedido.
+
+```
+// Modelo que representa un pedido completado
+export default class Order {
+  constructor({ id, items, total, status, date,
+                address }) {
+    this.id = id;
+    this.items = items || [];     // Lista de CartItems
+    this.total = total;           // Monto total
+    this.status = status || 'Pendiente'; // Estado del pedido
+    this.date = date || new Date().toISOString();
+    this.address = address || '';
+  }
+
+  static fromJSON(json) {
+    return new Order(json);
+  }
+
+  getFormattedDate() {
+    return new Date(this.date).toLocaleDateString('es-PE');
+  }
+
+  getStatusColor() {
+    const colors = {
+      Pendiente: '#F39C12',
+      Procesando: '#3498DB',
+      Enviado: '#8E44AD',
+      Entregado: '#27AE60',
+    };
+    return colors[this.status] || '#95A5A6';
+  }
+}
+```
+
+### 2.3. Carpeta "services"
+
+- **EventBus.js**: Autobús de eventos, permite que diferentes partes de una aplicación se comuniquen entre sí sin estar acopladas directamente.
+
+```
+// Simple event bus for cross-component communication
+const listeners = {};
+
+export default {
+  on(event, cb) {
+    if (!listeners[event]) listeners[event] = [];
+    listeners[event].push(cb);
+    return () => this.off(event, cb);
+  },
+  off(event, cb) {
+    if (!listeners[event]) return;
+    listeners[event] = listeners[event].filter(l => l !== cb);
+  },
+  emit(event, payload) {
+    (listeners[event] || []).forEach(cb => {
+      try { cb(payload); } catch (e) { console.error('EventBus handler error', e); }
+    });
+  }
+};
+```
+
+- **ThemeContext.js**: Contexto para aplicar el modo oscuro en toda la aplicación y viceversa. Incluye darle un estilo nuevo a cada componente
+
+```
+export function ThemeProvider({ children }) {
+     const [dark, setDark] = useState(false);
+
+     useEffect(() => {
+          let mounted = true;
+          StorageService.isDarkTheme().then(v => {
+               if (mounted) setDark(!!v);
+          }).catch(() => {});
+          return () => { mounted = false; };
+     }, []);
+
+     const toggle = useCallback(() => {
+          setDark(prev => {
+               const newValue = !prev;
+               StorageService.setDarkTheme(newValue).catch(console.error);
+               return newValue;
+          });
+     }, []);
+
+     const theme = dark ? darkTheme : lightTheme;
+
+     return (
+          <ThemeContext.Provider value={{ dark, theme, toggle }}>
+               {children}
+          </ThemeContext.Provider>
+     );
+}
+
+export function useTheme() {
+     return useContext(ThemeContext);
+}
+
+export default ThemeContext;
 ```
