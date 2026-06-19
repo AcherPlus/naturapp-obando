@@ -58,7 +58,7 @@ export default function ProductDetailScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}> 
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size='large' color={theme.accent} />
       </View>
     );
@@ -66,7 +66,7 @@ export default function ProductDetailScreen() {
 
   if (error) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}> 
+      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
         <Text style={[styles.errorText, { color: theme.accent }]}>{error}</Text>
       </View>
     );
@@ -76,11 +76,11 @@ export default function ProductDetailScreen() {
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}>
       <Image source={{ uri: product.image }} style={styles.image} />
-      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <Text style={[styles.name, { color: theme.text }]}>{product.name}</Text>
         <Text style={[styles.category, { color: theme.secondaryText }]}>Categoria: {product.category}</Text>
 
-        <View style={styles.row}> 
+        <View style={styles.row}>
           <Text style={[styles.price, { color: theme.accent }]}> {product.getFormattedPrice()} </Text>
           <TouchableOpacity
             style={[styles.cartButton, { backgroundColor: theme.accent }]}
@@ -91,12 +91,12 @@ export default function ProductDetailScreen() {
 
         <View style={styles.infoRow}>
           <View style={[styles.infoBlock, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.infoLabel, { color: theme.secondaryText }]}>Stock</Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>{product.stock}</Text>
+            <Text style={[styles.infoLabel, { color: theme.secondaryText }]}>Stock</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>{product.stock}</Text>
           </View>
           <View style={[styles.infoBlock, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.infoLabel, { color: theme.secondaryText }]}>Calificación</Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>{product.rating?.toFixed(1) ?? '0.0'} ★</Text>
+            <Text style={[styles.infoLabel, { color: theme.secondaryText }]}>Calificación</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>{product.rating?.toFixed(1) ?? '0.0'} ★</Text>
           </View>
         </View>
 
