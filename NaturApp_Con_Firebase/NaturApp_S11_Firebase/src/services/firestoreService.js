@@ -173,33 +173,7 @@ const localOrders = [];
 
 export const OrderService = {
   // Crear pedido
-  // create: async (userId, orderData) => {
-  //   try {
-  //     const docRef = await addDoc(collection(db, 'orders'), {
-  //       userId,
-  //       items: orderData.items,
-  //       total: orderData.total,
-  //       shippingAddress: orderData.shippingAddress,
-  //       paymentMethod: orderData.paymentMethod || 'cash',
-  //       status: 'pending',
-  //       createdAt: serverTimestamp(),
-  //     });
-  //     return { id: docRef.id, ...orderData, status: 'pending', createdAt: new Date().toISOString() };
-  //   } catch (err) {
-  //     const order = {
-  //       id: String(localOrders.length + 1),
-  //       userId,
-  //       ...orderData,
-  //       status: 'pending',
-  //       createdAt: new Date().toISOString(),
-  //     };
-  //     localOrders.unshift(order);
-  //     return order;
-  //   }
-  // },
-
   create: async (userId, orderData) => {
-  // ELIMINA O COMENTA EL TRY/CATCH TEMPORALMENTE
   // Queremos ver si el addDoc falla.
     console.log('Intentando guardar en Firestore...', { userId, orderData });
     

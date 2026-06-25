@@ -55,7 +55,6 @@ export function useCart(userId) {
       return [...prevItems, {...product, quantity: 1}];
     });
 
-
     try {
       await CartService.addItem(userId, product);
       await loadCart(); // Recargar desde Firestore

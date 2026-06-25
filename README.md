@@ -1,4 +1,4 @@
-# NaturaApp
+# NaturaApp - Arquitectura de Capas (Sem 10)
 
 Proyecto arreglado "NaturApp" para el curso de "Taller de Construcción de Software Móvil"
 
@@ -512,3 +512,111 @@ export function useTheme() {
 
 export default ThemeContext;
 ```
+
+# NaturaApp - Firebase (Sem 12)
+
+Incluye autenticación en Firebase mediante la colección "users" y gestión de elementos como colección de productos ("products") y categorías ("categories"). Luego de agregar las credenciales del proyecto de Firebase, estos son los cambios que se hizo para manejar el proceso de compra.
+
+## 1. firestoreService.js
+
+Se cambió el nombre de algunos de los atributos de los objetos, entre ellos:
+
+- userId -> id (para indicar los pedidos de acuerdo al ID del usuario)
+
+- isActive -> active (si el producto se encuentra disponible en el inventario)
+
+- **OrderService.create**: Se le agrega un valor alternativo para cada elemento, en caso reciba "undefined". Por ejemplo, items recibe una cadena vacía, el total vale cero, y en la dirección aparezca como "Sin dirección".
+
+- **getByUser**: Se inserta mensajes de debug para la obtención de los pedidos por ID, donde hace un conteo de los elementos, y posee un manejo de errores en caso la base de datos no responda.
+
+```
+// Crear pedido
+  create: async (userId, orderData) => {
+  // Queremos ver si el addDoc falla.
+    console.log('Intentando guardar en Firestore...', { userId, orderData });
+    
+    const docRef = await addDoc(collection(db, 'orders'), {
+      userId,
+      items: orderData.items || [],
+      total: orderData.total || 0,
+      shippingAddress: orderData.shippingAddress || 'Sin dirección',
+      paymentMethod: orderData.paymentMethod || 'cash',
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+  
+    console.log('¡ÉXITO! Documento creado con ID:', docRef.id);
+    return { id: docRef.id, ...orderData };
+},
+
+// Obtener pedidos del usuario
+getByUser: async (userId) => {
+  try {
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    // LOG DE SEGURIDAD
+    console.log('DEBUG: ¿Existen documentos en la colección orders?');
+    const allDocs = await getDocs(collection(db, 'orders'));
+    console.log('DEBUG: Total de documentos en toda la colección orders:', allDocs.size);
+    
+    const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    return results;
+  } catch (err) {
+    console.error('ERROR EN QUERY:', err); // ¡Esto mostrará el error real!
+    return [];
+  }
+}
+```
+
+## 2. useCart.js
+
+- **loadCart**: Se usa una condicional como modo de seguridad solo en el caso de que la base de datos devuelva la información esperada. Si es positiva y a la vez es un arreglo, ejecuta la función setItems. Caso contrario, marca el error y anula la entrada del producto al carrito, indicando cuál es el nombre/tipo de producto, y la cantidad de cada producto.
+
+```
+const loadCart = useCallback(async () => {
+  if (!userId) return;
+  setLoading(true);
+  try {
+    const data = await CartService.get(userId);
+    
+    // Seguridad:
+    if (data && Array.isArray(data.items)) {
+      setItems(data.items);
+    }
+    else {
+      console.warn('El formato de datos no es el esperado', data);
+      setItems([]);
+    }
+
+    // Log para verificar en terminal si hay productos en el carrito
+    console.log('useCart.loadCart — userId:', userId, 'items:', data.items);
+  } catch (err) {
+    console.error('Error cargando carrito:', err);
+    setError('No se pudo cargar el carrito');
+  } finally {
+    setLoading(false);
+  }
+}, [userId]);
+```
+
+- **addItem**: Se maneja el estado de la pantalla actualizándo los datos existentes con los nuevos. 
+```
+// Actualizar pantalla antes de llamar a Firebase
+setItems((prevItems) => {
+  const existingItem = prevItems.find(item => item.id === product.id);
+  if (existingItem) {
+    return prevItems.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1} : item);
+  }
+  return [...prevItems, {...product, quantity: 1}];
+});
+```
+
+## useOrders.js
+
+- **createOrders**: Se le aplica una actualización optimista, esto significa actualizar la interfaz inmediatamente antes de que el servidor confirme el cambio, para que la aplicación se sienta más rápida. Se consigue mediante un pedido temporal, donde si Firestore cambia, se puede revetir el cambio del prducto.
