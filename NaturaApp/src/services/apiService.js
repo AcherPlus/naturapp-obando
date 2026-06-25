@@ -6,7 +6,7 @@ import StorageService from './storageService';
 // Usa fetch con async/await (asincronía)
 // ============================================
 
-const BASE_URL = 'http://192.168.137.145:9090/api';
+const BASE_URL = 'http://192.168.100.3:9090/api';
 
 // Helper para peticiones HTTP con manejo de errores
 async function request(endpoint, options = {}) {
